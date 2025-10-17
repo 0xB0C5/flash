@@ -40,14 +40,35 @@ def main():
             print('Connection failed.')
             return
 
-        print('Connected. Checking data validity.')
+        print('Serial connected.')
 
+        print('Clearing...')
+        ser.write(b'C')
+        if ser.read(1) != b'C':
+            print('Clear failed.')
+            return
+
+        print('Flash data cleared.')
+
+        print('Writing...')
+        for page_index, data_page in enumerate(data_pages):
+            print('Writing page', (page_index+1), 'of', len(data_pages))
+            ser.write(b'W' + bytes([page_index]) + data_page)
+
+            if ser.read(1) != b'W':
+                print('Write failed.')
+                return
+
+        print('Write complete.')
+
+
+        print('Validating...')
         is_valid = True
-        needs_clear = False
         for page_index, data_page in enumerate(data_pages):
             ser.write(b'R' + bytes([page_index]))
-            while ser.read(1) != b'R':
-                pass
+            if ser.read(1) != b'R':
+                print('Read failed.')
+                return
 
             flash_page = b''
             while len(flash_page) < 256:
@@ -56,36 +77,12 @@ def main():
             if flash_page != data_page:
                 is_valid = False
 
-                if any(b != 0xff for b in flash_page):
-                    print('Page', page_index, 'contains incorrect data.')
-                    print(flash_page)
-                    needs_clear = True
-                else:
-                    print('Page', page_index, 'is clear.')
+                print(f'INVALID DATA ON PAGE {page_index}:')
+                print(flash_page)
 
         if is_valid:
             print('Flash data is valid.')
-            return
 
-        if needs_clear:
-            print('Flash data invalid. Clearing.')
-            ser.write(b'C')
-            while ser.read(1) != b'C':
-                pass
-
-            print('Flash data cleared.')
-        else:
-            print('Flash data is clear.')
-
-        print('Writing.')
-        for page_index, data_page in enumerate(data_pages):
-            print('Writing page', (page_index+1), 'of', len(data_pages))
-            ser.write(b'W' + bytes([page_index]) + data_page)
-
-            while ser.read(1) != b'W':
-                pass
-
-        print('Write complete.')
 
 if __name__ == '__main__':
     main()

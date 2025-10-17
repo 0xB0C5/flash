@@ -1,18 +1,30 @@
 /*
- * SST39SF010A flash chip programmer
+ * SST39SF010A flash programmer for Raspberry Pi Pico
+ * Probably could work with other Arduino-compatible boards,
+ * as long as they have enough I/O pins.
  * 
- * So this is a bit of a janky mess.
- * It uses all but one I/O pin of the Raspberry Pi Pico, which means that garbage serial data will be sent while flash stuff is happening.
- * Once it's done flash stuff, it responds with a single byte indicating the type of response (e.g. R for read, W for write)
- * But this really isn't enough to ensure it's actually done, that single byte could potentially be generated from the flash stuff.
- * But I haven't seen that happen yet so I haven't done anything about it.
+ * Warning: This runs at 3.3v which is out of spec for the
+ * SST39SF010A. In practice it appears to work, but YMMV.
+ *
+ * This can do 32KiB at a time. If you need more than that,
+ * you can program it in multiple passes, manually changing
+ * the connections of A15+ between each pass.
  */
 
+// Connect these I/O pins to flash /OE and /WE
 const int PIN_FLASH_OUTPUT_ENABLE = 26;
 const int PIN_FLASH_WRITE_ENABLE  = 27;
 
+// Connect 8 I/O pins, starting from PIN_FLASH_DATA0, to flash D0-D7
 const int PIN_FLASH_DATA0 = 0;
+
+// Connect 15 I/O pins, starting from PIN_FLASH_ADDR0, to flash A0-A14.
 const int PIN_FLASH_ADDR0 = 8;
+
+// Higher flash address pins should be connected to GND.
+// (Or 3V3(OUT) to select other 32KiB regions to flash.)
+
+// Also connect Pico 3V3(OUT) to flash VDD and Pico GND to flash VSS.
 
 const int ADDR_PIN_COUNT = 15;
 
